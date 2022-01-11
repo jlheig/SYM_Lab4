@@ -156,8 +156,7 @@ class BleActivity : BaseTemplateActivity() {
             // TODO ajouter un filtre pour n'afficher que les devices proposant
             // le service "SYM" (UUID: "3c0a1000-281d-4b48-b2a7-f15579a1c38f")
 
-            var scanFilter = ScanFilter.Builder()
-            scanFilter.setServiceUuid(
+            var scanFilter = ScanFilter.Builder().setServiceUuid(
                     ParcelUuid(UUID.fromString("3c0a1000-281d-4b48-b2a7-f15579a1c38f"))
             )
             var scanFilters = listOf<ScanFilter>(scanFilter.build())

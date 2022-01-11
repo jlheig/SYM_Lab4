@@ -12,6 +12,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.observer.ConnectionObserver
+import java.util.*
 
 /**
  * Project: Labo4
@@ -128,8 +129,42 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
                         - On en profitera aussi pour garder les références vers les différents services et
                           caractéristiques (déclarés en lignes 39 à 44)
                         */
+                        val timeServiceUuid = "00001805-0000-1000-8000-00805f9b34fb"
+                        val currentTimeCharUuid = "00002A2B-0000-1000-8000-00805f9b34fb"
+                        val symServiceUuid = "3c0a1000-281d-4b48-b2a7-f15579a1c38f"
+                        val integerCharUuid = "3c0a1001-281d-4b48-b2a7-f15579a1c38f"
+                        val temperatureCharUuid = "3c0a1002-281d-4b48-b2a7-f15579a1c38f"
+                        val buttonClickCharUuid = "3c0a1003-281d-4b48-b2a7-f15579a1c38f"
 
-                        return false //FIXME si tout est OK, on retourne true, sinon la librairie appelera la méthode onDeviceDisconnected() avec le flag REASON_NOT_SUPPORTED
+
+                        val uuidMap = mapOf(
+                                timeServiceUuid to listOf(currentTimeCharUuid),
+                                symServiceUuid to listOf(
+                                        integerCharUuid,
+                                        temperatureCharUuid,
+                                        buttonClickCharUuid
+                                )
+                        )
+
+                        for (elem in uuidMap) {
+                            val service = gatt.getService(UUID.fromString(elem.key)) ?: return false
+
+                            for (charUuid in elem.value) {
+                                val char = service.getCharacteristic(UUID.fromString(charUuid)) ?: return false
+                                when (charUuid) {
+                                    currentTimeCharUuid -> currentTimeChar = char
+                                    integerCharUuid -> integerChar = char
+                                    temperatureCharUuid -> temperatureChar = char
+                                    buttonClickCharUuid -> buttonClickChar = char
+                                }
+                            }
+                            when (elem.key) {
+                                timeServiceUuid -> timeService = service
+                                symServiceUuid -> symService = service
+                            }
+                        }
+
+                        return true //FIXME si tout est OK, on retourne true, sinon la librairie appelera la méthode onDeviceDisconnected() avec le flag REASON_NOT_SUPPORTED
                     }
 
                     override fun initialize() {
