@@ -16,6 +16,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import java.text.SimpleDateFormat
 import java.util.*
 
 /**
@@ -84,6 +85,14 @@ class BleActivity : BaseTemplateActivity() {
 
         //ble events
         bleViewModel.isConnected.observe(this, { updateGui() })
+
+        bleViewModel.currentTime.observe(this, {
+            val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+            // Toast.makeText(this@BleActivity, format.format(it.time), Toast.LENGTH_SHORT).show()
+        })
+        bleViewModel.btnClick.observe(this, {
+            Toast.makeText(this@BleActivity, it.toString(), Toast.LENGTH_SHORT).show()
+        })
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

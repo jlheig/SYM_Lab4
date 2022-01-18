@@ -4,6 +4,7 @@ import android.app.Application
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
+import android.bluetooth.BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
 import android.bluetooth.BluetoothGattService
 import android.content.Context
 import android.util.Log
@@ -11,6 +12,7 @@ import android.widget.Toast
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import no.nordicsemi.android.ble.BleManager
+import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.ble.observer.ConnectionObserver
 import java.util.*
 
@@ -27,6 +29,10 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
 
     //live data - observer
     val isConnected = MutableLiveData(false)
+
+    val currentTime = MutableLiveData(Calendar.getInstance())
+    val btnClick = MutableLiveData(0)
+    val temperature = MutableLiveData(0.0)
 
     //Services and Characteristics of the SYM Pixl
     private var timeService: BluetoothGattService? = null
@@ -68,6 +74,20 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
             return false
         else
             return ble.readTemperature()
+    }
+
+    fun sendInteger(n : Int) : Boolean {
+        if (!isConnected.value!! || integerChar == null)
+            return false
+        else
+            return ble.sendInteger(n)
+    }
+
+    fun sendCurrentTime(currentTime : Calendar) : Boolean {
+        if (!isConnected.value!! || currentTimeChar == null)
+            return false
+        else
+            return ble.sendCurrentTime(currentTime)
     }
 
     private val bleConnectionObserver: ConnectionObserver = object : ConnectionObserver {
@@ -120,7 +140,6 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
                     public override fun isRequiredServiceSupported(gatt: BluetoothGatt): Boolean {
                         mConnection = gatt //trick to force disconnection
 
-                        Log.d(TAG, "isRequiredServiceSupported - TODO")
 
                         /* TODO
                         - Nous devons vérifier ici que le périphérique auquel on vient de se connecter possède
@@ -174,6 +193,32 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
                             Dans notre cas il s'agit de s'enregistrer pour recevoir les notifications proposées par certaines
                             caractéristiques, on en profitera aussi pour mettre en place les callbacks correspondants.
                          */
+
+                        enableNotifications(currentTimeChar).enqueue()
+
+                        setNotificationCallback(currentTimeChar).with{ _ , data : Data ->
+                            val year = data.getIntValue(Data.FORMAT_UINT16, 0)
+                            val month = data.getIntValue(Data.FORMAT_UINT8, 2)
+                            val dayOfMonth = data.getIntValue(Data.FORMAT_UINT8, 3)
+                            val hour = data.getIntValue(Data.FORMAT_UINT8, 4)
+                            val minute = data.getIntValue(Data.FORMAT_UINT8, 5)
+                            val second = data.getIntValue(Data.FORMAT_UINT8, 6)
+
+                            if (year != null && month != null && dayOfMonth != null && hour != null && minute != null && second != null) {
+                                var date = Calendar.getInstance()
+                                date.set(year,month,dayOfMonth,hour, minute,second)
+                                currentTime.postValue(date)
+                            }
+
+                        }
+
+                        enableNotifications(buttonClickChar).enqueue()
+
+                        setNotificationCallback(buttonClickChar).with{ _, data : Data ->
+                            var click = data.getIntValue(Data.FORMAT_UINT8, 0)
+                            btnClick.postValue(click)
+                        }
+
                     }
 
                     override fun onServicesInvalidated() {
@@ -197,7 +242,26 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
                 des MutableLiveData
                 On placera des méthodes similaires pour les autres opérations
             */
-            return false //FIXME
+            if (temperatureChar == null) return false
+
+            readCharacteristic(temperatureChar).with{ _, data : Data ->
+                val temp = data.getIntValue(Data.FORMAT_UINT16, 0)?.div(10.0)
+                temperature.postValue(temp)
+            }.enqueue()
+
+            return true
+        }
+
+        fun sendInteger(n : Int) : Boolean {
+            writeCharacteristic(integerChar, byteArrayOf(n.toByte()),WRITE_TYPE_DEFAULT).enqueue()
+            return true
+        }
+
+        fun sendCurrentTime(currentTime : Calendar) : Boolean {
+            val ct = ByteArray(10)
+
+            writeCharacteristic(integerChar, ct,WRITE_TYPE_DEFAULT).enqueue()
+            return true
         }
     }
 
