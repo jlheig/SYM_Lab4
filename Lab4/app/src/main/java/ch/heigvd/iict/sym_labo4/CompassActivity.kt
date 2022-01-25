@@ -32,7 +32,7 @@ class CompassActivity : AppCompatActivity(), SensorEventListener {
     //Datas
     private var dAccel = FloatArray(3)
     private var dMagnetic = FloatArray(3)
-    private var dRotation = FloatArray(3)
+    private var dRotation = FloatArray(16)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,8 +62,8 @@ class CompassActivity : AppCompatActivity(), SensorEventListener {
     override fun onResume() {
         super.onResume()
         //Register listeners
-        sManager.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_UI)
-        sManager.registerListener(this, sMagnetic, SensorManager.SENSOR_DELAY_UI)
+        sManager.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_GAME)
+        sManager.registerListener(this, sMagnetic, SensorManager.SENSOR_DELAY_GAME)
     }
 
     override fun onPause() {
