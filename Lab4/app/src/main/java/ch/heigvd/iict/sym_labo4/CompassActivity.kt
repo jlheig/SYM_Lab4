@@ -1,7 +1,12 @@
 package ch.heigvd.iict.sym_labo4
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.opengl.GLSurfaceView
 import android.os.Bundle
+import android.util.Log
 import android.view.Window
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
@@ -13,11 +18,21 @@ import ch.heigvd.iict.sym_labo4.gl.OpenGLRenderer
  * Updated by fabien.dutoit on 06.11.2020
  * (C) 2016 - HEIG-VD, IICT
  */
-class CompassActivity : AppCompatActivity() {
+class CompassActivity : AppCompatActivity(), SensorEventListener {
 
     //opengl
     private lateinit var opglr: OpenGLRenderer
     private lateinit var m3DView: GLSurfaceView
+
+    //Sensors
+    private lateinit var sManager: SensorManager
+    private lateinit var sAccel: Sensor
+    private lateinit var sMagnetic: Sensor
+
+    //Datas
+    private var dAccel = FloatArray(3)
+    private var dMagnetic = FloatArray(3)
+    private var dRotation = FloatArray(3)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,16 +53,38 @@ class CompassActivity : AppCompatActivity() {
         //init opengl surface view
         m3DView.setRenderer(opglr)
 
+        // Set sensors
+        sManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sAccel = sManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        sMagnetic = sManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     }
 
-    /*
-        TODO
-        your activity need to register to accelerometer and magnetometer sensors' updates
-        then you may want to call
-        opglr.swapRotMatrix()
-        with the 4x4 rotation matrix, every time a new matrix is computed
-        more information on rotation matrix can be found online:
-        https://developer.android.com/reference/android/hardware/SensorManager.html#getRotationMatrix(float[],%20float[],%20float[],%20float[])
-    */
+    override fun onResume() {
+        super.onResume()
+        //Register listeners
+        sManager.registerListener(this, sAccel, SensorManager.SENSOR_DELAY_UI)
+        sManager.registerListener(this, sMagnetic, SensorManager.SENSOR_DELAY_UI)
+    }
 
+    override fun onPause() {
+        super.onPause()
+        //unregister listenener
+        sManager.unregisterListener(this)
+    }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        when (event?.sensor?.type) {
+            Sensor.TYPE_ACCELEROMETER -> dAccel = event.values
+            Sensor.TYPE_MAGNETIC_FIELD -> dMagnetic = event.values
+        }
+
+        SensorManager.getRotationMatrix(dRotation, null, dAccel, dMagnetic)
+
+        dRotation = opglr.swapRotMatrix(dRotation)
+    }
+
+    override fun onAccuracyChanged(p0: Sensor?, p1: Int) {
+
+    }
 }
+
