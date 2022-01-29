@@ -14,6 +14,9 @@ import androidx.lifecycle.MutableLiveData
 import no.nordicsemi.android.ble.BleManager
 import no.nordicsemi.android.ble.data.Data
 import no.nordicsemi.android.ble.observer.ConnectionObserver
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.time.Year
 import java.util.*
 
 /**
@@ -198,14 +201,17 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
 
                         setNotificationCallback(currentTimeChar).with{ _ , data : Data ->
                             val year = data.getIntValue(Data.FORMAT_UINT16, 0)
-                            val month = data.getIntValue(Data.FORMAT_UINT8, 2)
+                            var month = data.getIntValue(Data.FORMAT_UINT8, 2)
                             val dayOfMonth = data.getIntValue(Data.FORMAT_UINT8, 3)
                             val hour = data.getIntValue(Data.FORMAT_UINT8, 4)
                             val minute = data.getIntValue(Data.FORMAT_UINT8, 5)
                             val second = data.getIntValue(Data.FORMAT_UINT8, 6)
 
+
+
                             if (year != null && month != null && dayOfMonth != null && hour != null && minute != null && second != null) {
                                 var date = Calendar.getInstance()
+                                month -= 1
                                 date.set(year,month,dayOfMonth,hour, minute,second)
                                 currentTime.postValue(date)
                             }
@@ -260,7 +266,23 @@ class BleOperationsViewModel(application: Application) : AndroidViewModel(applic
         fun sendCurrentTime(currentTime : Calendar) : Boolean {
             val ct = ByteArray(10)
 
-            writeCharacteristic(integerChar, ct,WRITE_TYPE_DEFAULT).enqueue()
+            val zero = 0
+
+            val year = currentTime.get(Calendar.YEAR)
+            val byteYear = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(year).array()
+
+            ct[0] = byteYear[0]
+            ct[1] = byteYear[1]
+            ct[2] = (currentTime.get(Calendar.MONTH ) + 1 ).toByte()
+            ct[3] = currentTime.get(Calendar.DAY_OF_MONTH).toByte()
+            ct[4] = currentTime.get(Calendar.HOUR).toByte()
+            ct[5] = currentTime.get(Calendar.MINUTE).toByte()
+            ct[6] = currentTime.get(Calendar.SECOND).toByte()
+            ct[7] = currentTime.get(Calendar.DAY_OF_WEEK).toByte()
+            ct[8] = currentTime.get(Calendar.MILLISECOND).toByte()
+            ct[9] = zero.toByte()
+
+            writeCharacteristic(currentTimeChar, ct,WRITE_TYPE_DEFAULT).enqueue()
             return true
         }
     }

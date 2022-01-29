@@ -38,6 +38,13 @@ class BleActivity : BaseTemplateActivity() {
     private lateinit var scanResults: ListView
     private lateinit var emptyScanResults: TextView
 
+    private lateinit var realTimeDisplay: TextView
+    private lateinit var temperatureDisplay : TextView
+    private lateinit var btnClickDisplay : TextView
+    private lateinit var temperatureButton : Button
+    private lateinit var currentTimeButton : Button
+    private lateinit var integerButton: Button
+
     //menu elements
     private var scanMenuBtn: MenuItem? = null
     private var disconnectMenuBtn: MenuItem? = null
@@ -62,6 +69,13 @@ class BleActivity : BaseTemplateActivity() {
         scanPanel = findViewById(R.id.ble_scan)
         scanResults = findViewById(R.id.ble_scanresults)
         emptyScanResults = findViewById(R.id.ble_scanresults_empty)
+
+        temperatureDisplay = findViewById(R.id.ble_temperature)
+        realTimeDisplay = findViewById(R.id.ble_hour)
+        btnClickDisplay = findViewById(R.id.ble_button)
+        temperatureButton = findViewById(R.id.ble_temperature_button)
+        currentTimeButton = findViewById(R.id.ble_currentTime_button)
+        integerButton = findViewById(R.id.ble_integer_button)
 
         //manage scanned item
         scanResultsAdapter = ResultsAdapter(this)
@@ -88,11 +102,28 @@ class BleActivity : BaseTemplateActivity() {
 
         bleViewModel.currentTime.observe(this, {
             val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
-            // Toast.makeText(this@BleActivity, format.format(it.time), Toast.LENGTH_SHORT).show()
+            realTimeDisplay.setText(format.format(it.time))
         })
         bleViewModel.btnClick.observe(this, {
-            Toast.makeText(this@BleActivity, it.toString(), Toast.LENGTH_SHORT).show()
+            btnClickDisplay.setText(it.toString())
         })
+
+        bleViewModel.temperature.observe(this, {
+            temperatureDisplay.setText(it.toString())
+        })
+
+        temperatureButton.setOnClickListener {
+            bleViewModel.readTemperature()
+        }
+
+        currentTimeButton.setOnClickListener{
+            bleViewModel.sendCurrentTime(Calendar.getInstance())
+        }
+
+        integerButton.setOnClickListener{
+            val n = Math.round(Math.random() * Int.MAX_VALUE).toInt()
+            bleViewModel.sendInteger(n)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
