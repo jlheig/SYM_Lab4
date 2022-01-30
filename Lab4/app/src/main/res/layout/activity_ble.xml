@@ -18,7 +18,56 @@
             android:orientation="vertical">
 
             <!-- TODO vous placerez dans ce layout toutes les vues nécessaires aux intéractions avec le périphérique BLE -->
+            <Button
+                android:id="@+id/ble_temperature_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_temperature_read"
+                />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_temperature_title"/>
+
+            <TextView
+                android:id="@+id/ble_temperature"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Button
+                android:id="@+id/ble_currentTime_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_currenttime_set"
+                />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_currenttime_title"/>
+
+            <TextView
+                android:id="@+id/ble_hour"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_clickcounter_title"/>
+
+            <TextView
+                android:id="@+id/ble_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/ble_integer_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ble_sendvalue_send"
+                />
         </LinearLayout>
 
     </ScrollView>

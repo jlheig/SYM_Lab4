@@ -10,11 +10,14 @@ import android.bluetooth.le.*
 import androidx.lifecycle.ViewModelProvider
 import android.os.Handler
 import android.os.Looper
+import android.os.ParcelUuid
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.*
+import java.text.SimpleDateFormat
+import java.util.*
 
 /**
  * Project: Labo4
@@ -34,6 +37,13 @@ class BleActivity : BaseTemplateActivity() {
     private lateinit var scanPanel: View
     private lateinit var scanResults: ListView
     private lateinit var emptyScanResults: TextView
+
+    private lateinit var realTimeDisplay: TextView
+    private lateinit var temperatureDisplay : TextView
+    private lateinit var btnClickDisplay : TextView
+    private lateinit var temperatureButton : Button
+    private lateinit var currentTimeButton : Button
+    private lateinit var integerButton: Button
 
     //menu elements
     private var scanMenuBtn: MenuItem? = null
@@ -60,6 +70,13 @@ class BleActivity : BaseTemplateActivity() {
         scanResults = findViewById(R.id.ble_scanresults)
         emptyScanResults = findViewById(R.id.ble_scanresults_empty)
 
+        temperatureDisplay = findViewById(R.id.ble_temperature)
+        realTimeDisplay = findViewById(R.id.ble_hour)
+        btnClickDisplay = findViewById(R.id.ble_button)
+        temperatureButton = findViewById(R.id.ble_temperature_button)
+        currentTimeButton = findViewById(R.id.ble_currentTime_button)
+        integerButton = findViewById(R.id.ble_integer_button)
+
         //manage scanned item
         scanResultsAdapter = ResultsAdapter(this)
         scanResults.adapter = scanResultsAdapter
@@ -82,6 +99,31 @@ class BleActivity : BaseTemplateActivity() {
 
         //ble events
         bleViewModel.isConnected.observe(this, { updateGui() })
+
+        bleViewModel.currentTime.observe(this, {
+            val format = SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault())
+            realTimeDisplay.setText(format.format(it.time))
+        })
+        bleViewModel.btnClick.observe(this, {
+            btnClickDisplay.setText(it.toString())
+        })
+
+        bleViewModel.temperature.observe(this, {
+            temperatureDisplay.setText(it.toString())
+        })
+
+        temperatureButton.setOnClickListener {
+            bleViewModel.readTemperature()
+        }
+
+        currentTimeButton.setOnClickListener{
+            bleViewModel.sendCurrentTime(Calendar.getInstance())
+        }
+
+        integerButton.setOnClickListener{
+            val n = Math.round(Math.random() * Int.MAX_VALUE).toInt()
+            bleViewModel.sendInteger(n)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -154,9 +196,13 @@ class BleActivity : BaseTemplateActivity() {
             // TODO ajouter un filtre pour n'afficher que les devices proposant
             // le service "SYM" (UUID: "3c0a1000-281d-4b48-b2a7-f15579a1c38f")
 
+            var scanFilter = ScanFilter.Builder().setServiceUuid(
+                    ParcelUuid(UUID.fromString("3c0a1000-281d-4b48-b2a7-f15579a1c38f"))
+            )
+            var scanFilters = listOf<ScanFilter>(scanFilter.build())
             //reset display
             scanResultsAdapter.clear()
-            bluetoothScanner.startScan(null, builderScanSettings.build(), leScanCallback)
+            bluetoothScanner.startScan(scanFilters, builderScanSettings.build(), leScanCallback)
             Log.d(TAG, "Start scanning...")
             isScanning = true
 
